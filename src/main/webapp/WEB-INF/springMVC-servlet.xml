@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:jms="http://www.springframework.org/schema/jms"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+      
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+          http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+          http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+          http://www.springframework.org/schema/jms http://www.springframework.org/schema/jms/spring-jms-4.0.xsd
+          http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+          http://www.springframework.org/schema/mvc
+          http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd">
+    
+    <!--Spring configuration-->
+    <aop:aspectj-autoproxy proxy-target-class="true"/>
+  
+    <mvc:annotation-driven />
+    
+    <context:component-scan base-package="cs544.onlineforumproject.controller"/>
+    
+    <bean class="org.springframework.web.servlet.mvc.support.ControllerClassNameHandlerMapping"/>
+    
+     <bean id="supperController" class="cs544.onlineforumproject.controller.SupperController"/>
+
+<!--    Category-->
+     <bean id="categoryController" class="cs544.onlineforumproject.controller.CategoryController">
+        <property name="categoryService" ref="categoryService"/>
+    </bean>
+    
+    <bean id="categoryService" class="cs544.onlineforumproject.service.CategoryService">
+        <property name="categoryDao" ref="categoryDao"/>       
+    </bean>
+    
+     <bean id="categoryDao" class="cs544.onlineforumproject.dao.CategoryDao">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+    
+    
+    <!--Topic-->      
+     <bean id="topicController" class="cs544.onlineforumproject.controller.TopicController">
+        <property name="topicService" ref="topicService"/>
+        <property name="categoryService" ref="categoryService"/>
+        <property name="userService" ref="userService"/>
+    </bean>
+   
+    <bean id="topicService" class="cs544.onlineforumproject.service.TopicService">
+        <property name="topicDao" ref="topicDao"/>       
+    </bean>
+    
+    <bean id="topicDao" class="cs544.onlineforumproject.dao.TopicDao">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+    
+   <!--User-->
+     <bean id="userController" class="cs544.onlineforumproject.controller.UserController">
+        <property name="userService" ref="userService"/>
+       
+    </bean>
+    
+    <bean id="userService" class="cs544.onlineforumproject.service.UserService">
+        <property name="userDao" ref="userDao"/>
+    </bean>
+    
+     <bean id="userDao" class="cs544.onlineforumproject.dao.UserDao">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+    
+    <!--Aspect-->
+     <bean id="forumAspect" class="cs544.onlineforumproject.aspects.ForumAspect">
+          <property name="emailSender" ref="emailSender"/>
+    </bean>
+
+    
+    
+
+    <!--Hibernate configuration-->
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+        <property name="url" value="jdbc:mysql://localhost/cs544"/>
+        <property name="username" value="root"/>
+        <property name="password" value="root"/>
+    </bean>
+    
+    <bean id="sessionFactory" class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="hibernateProperties" ref="hibernateProperties"/>
+        <property name="annotatedClasses">
+            <list>
+                <value>cs544.onlineforumproject.domain.Category</value>
+                <value>cs544.onlineforumproject.domain.Topic</value>
+                <value>cs544.onlineforumproject.domain.Post</value>
+                <value>cs544.onlineforumproject.domain.User</value>
+            </list>
+        </property>
+    </bean>
+    
+    <bean id="hibernateProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+        <property name="properties">
+            <props>
+                <prop key="hibernate.hbm2ddl.auto">update</prop>
+                <prop key="hibernate.dialect">org.hibernate.dialect.MySQL5Dialect</prop>
+                <prop key="connection.pool.size">1</prop>
+                <prop key="hibernate.show_sql">true</prop>
+                <!--<prop key="hibernate.current_session_context_class">thread</prop>-->
+            </props>
+        </property>
+    </bean>
+    
+    
+    <bean
+        class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="viewClass" value="org.springframework.web.servlet.view.JstlView" />
+        <property name="prefix" value="/WEB-INF/views/" />
+        <property name="suffix" value=".jsp" />
+    </bean>
+    
+    <tx:annotation-driven transaction-manager="txManager"/>
+    
+    <bean id="txManager" class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+ 
+    
+    <!-- Lets us find resources (.html etc) through the default servlet -->
+    <mvc:default-servlet-handler/> 
+	
+
+    <!-- Handles HTTP GET requests for /resources/** by efficiently serving 
+    up static resources in the ${webappRoot}/resources/ directory -->
+   <mvc:resources mapping="/resources/**" location="/resources/" />
+    
+    <!--E-mail-->
+    <bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+	<property name="host" value="smtp.gmail.com" />
+	<property name="port" value="587" />
+	<property name="username" value="ea2bookshopping" />
+	<property name="password" value="ghtwhts1" />
+ 
+	<property name="javaMailProperties">
+	   <props>
+       	      <prop key="mail.smtp.auth">true</prop>
+       	      <prop key="mail.smtp.starttls.enable">true</prop>
+       	   </props>
+	</property>
+</bean>
+ 
+<bean id="emailSender" class="cs544.onlineforumproject.util.MailMail">
+	<property name="mailSender" ref="mailSender" />
+</bean>
+        
+</beans>
